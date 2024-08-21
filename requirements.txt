@@ -1,0 +1,9 @@
+Django==5.1
+djangorestframework==3.14.0
+pandas==2.1.1
+numpy==1.24.3
+openpyxl==3.1.1
+xlsxwriter==3.1.7
+xhtml2pdf==0.2.6
+reportlab==3.6.12
+mysqlclient==2.1.1

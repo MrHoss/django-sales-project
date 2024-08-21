@@ -1,0 +1,46 @@
+# Ignore virtual environment
+.venv/
+env/
+venv/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribuição
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Arquivos criados pelo pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Arquivos gerados pelo pytest
+.cache/
+
+# Arquivos de cobertura de teste
+coverage.xml
+*.cover
+.hypothesis/
+
+# Outras configurações e IDEs
+*.swp
+*.swo
+.idea/
+.vscode/
+*.bak
+*.log
+
+# Arquivos gerados pelo Django
+db.sqlite3
+*.log
+*.pot
+*.pyc
+**/migrations/*
+
+# Ignore pastas migrations, mas mantenha __init__.py
+**/migrations/**
+!**/migrations/__init__.py

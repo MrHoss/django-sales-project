@@ -1,0 +1,95 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .inner-table {
+            margin: 10px 0;
+            border-collapse: collapse;
+        }
+
+        .inner-table td {
+            padding: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .outer-table {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Relatório de Vendas</h1>
+    <table class="outer-table">
+        <thead>
+            <tr>
+                <th>ID da Venda</th>
+                <th>Data da Venda</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venda in vendas %}
+            <tr>
+                <td>{{ venda.venda.id }}</td>
+                <td>{{ venda.venda.data_venda }}</td>
+                <td>{{ venda.venda.cliente.nome }}</td>
+                <td>{{ venda.venda.vendedor.nome }}</td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                    <table class="inner-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Preço</th>
+                                <th>Quantidade</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in venda.itens %}
+                            <tr>
+                                <td>{{ item.produto.nome }}</td>
+                                <td>{{ item.produto.preco }}</td>
+                                <td>{{ item.quantidade }}</td>
+                                <td>{{ item.produto.preco|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">Nenhum item encontrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
