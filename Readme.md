@@ -1,6 +1,6 @@
 # Instruções para Iniciar a Aplicação com Docker
 
-Este documento fornece instruções para construir e executar a aplicação usando Docker e Docker Compose. A aplicação está configurada com Django e Django REST Framework (DRF).
+Este documento fornece instruções para construir e executar a aplicação usando Docker e Docker Compose. A aplicação está configurada com Django REST Framework (DRF).
 
 ## Requisitos
 
@@ -13,8 +13,8 @@ Este documento fornece instruções para construir e executar a aplicação usan
 
 Se você ainda não clonou o repositório, faça isso com o comando:
 ```bash
-git clone <URL-do-repositorio>
-cd <nome-do-repositorio>
+git clone git@github.com:MrHoss/django-sales-project.git
+cd django-sales-project
 ```
 
 ### 2. Construir e Iniciar os Containers
