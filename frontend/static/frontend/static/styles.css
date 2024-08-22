@@ -108,4 +108,63 @@ th {
     min-height: 50px;
     margin-bottom: 0;
 }
+
+/* Estilos para o acordeão */
+.accordion {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    transition: 0.4s;
+}
+
+.accordion.active,
+.accordion:hover {
+    background-color: #ccc;
+}
+
+.accordion:after {
+    content: '\002B';
+    color: #777;
+    font-weight: bold;
+    float: right;
+    margin-left: 5px;
+}
+
+.accordion.active:after {
+    content: "\2212";
+}
+
+.panel {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: white;
+}
+
+.panel table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.panel table,
+.panel th,
+.panel td {
+    border: 1px solid #ddd;
+}
+
+.panel th,
+.panel td {
+    padding: 8px;
+    text-align: left;
+}
+
+.panel th {
+    background-color: #f4f4f4;
+}
  
