@@ -14,12 +14,22 @@
         <h1>Página Inicial</h1>
     </div>
     <div class="container">
-        <a href="{% url 'produtos' %}" class="button">Produtos</a>
-        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
-        <a href="{% url 'clientes' %}" class="button">Clientes</a>
-        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
-        <a href="{% url 'vendas' %}" class="button">Vendas</a>
-        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+        <div class="box">
+            <a href="{% url 'produtos' %}" class="button">Produtos</a>
+            <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+            <a href="{% url 'clientes' %}" class="button">Clientes</a>
+            <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+            <a href="{% url 'vendas' %}" class="button">Vendas</a>
+            <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+        </div>
+        <div class="box">
+            <h5 style="margin: 5px;">Acessar DRF Browsable API:</h5>
+            <a href="{% url 'produtos:produtos-list' %}" class="button" style="background-color: #dc8035;">Listar Produtos</a>
+            <a href="{% url 'grupo_produto:grupo_produto-list' %}" class="button" style="background-color: #dc8035;">Listar Grupos de Produtos</a>
+            <a href="{% url 'clientes:clientes-list' %}" class="button" style="background-color: #dc8035;">Listar Clientes</a>
+            <a href="{% url 'vendedores:vendedores-list' %}" class="button" style="background-color: #dc8035;">Listar Vendedores</a>
+            <a href="{% url 'vendas:vendas-list' %}" class="button" style="background-color: #dc8035;">Listar Vendas</a>
+        </div>
     </div>
     <div class="welcome-container">
         <h2 class="welcome-message">Bem-vindo ao sistema de gestão! Selecione uma das opções acima para começar.</h2>
