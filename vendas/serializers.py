@@ -6,7 +6,7 @@ from itens_venda.models import ItemVenda
 from itens_venda.serializers import ItemVendaSerializer
 from clientes.serializers import ClienteSerializer
 from vendedores.serializers import VendedorSerializer
-from produtos.models import Produto  # Importe o modelo Produto
+from produtos.models import Produto
 
 class VendaBaseSerializer(serializers.ModelSerializer):
     cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
@@ -25,7 +25,7 @@ class VendaBaseSerializer(serializers.ModelSerializer):
         itens_data = validated_data.pop('itens', [])
         venda = Venda.objects.create(**validated_data)
         for item_data in itens_data:
-            produto = Produto.objects.get(id=item_data.pop('produto'))  # Remove 'produto' de item_data
+            produto = Produto.objects.get(id=item_data.pop('produto'))
             ItemVenda.objects.create(venda=venda, produto=produto, **item_data)
         return venda
 
@@ -36,10 +36,9 @@ class VendaBaseSerializer(serializers.ModelSerializer):
         instance.data_venda = validated_data.get('data_venda', instance.data_venda)
         instance.save()
 
-        # Atualiza ou cria os itens vendidos
         for item_data in itens_data:
             item_id = item_data.get('id')
-            produto = Produto.objects.get(id=item_data.pop('produto'))  # Remove 'produto' de item_data
+            produto = Produto.objects.get(id=item_data.pop('produto'))
             if item_id:
                 item = ItemVenda.objects.get(id=item_id, venda=instance)
                 item.produto = produto

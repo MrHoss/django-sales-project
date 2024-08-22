@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from vendas.models import Venda  # Importar modelo de vendas ou outro necessário
+from vendas.models import Venda
 
 class VendaSerializer(serializers.ModelSerializer):
     class Meta:

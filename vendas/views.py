@@ -1,4 +1,3 @@
-# vendas/views.py
 from rest_framework import viewsets
 from .models import Venda
 from .serializers import VendaBaseSerializer, VendaDetailSerializer
