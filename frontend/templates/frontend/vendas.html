@@ -155,11 +155,9 @@
                     itens: Array.from(itensList.querySelectorAll('.item')).map(item => ({
                         produto: item.querySelector('.produto').value,
                         quantidade: item.querySelector('.quantidade').value,
-                        preco: item.querySelector('.preco').value
                     })),
-                    total: calcularTotal(itensList) // Função para calcular o total
                 };
-
+                console.log(data)
                 fetch('/api/vendas/', {
                     method: 'POST',
                     headers: {
@@ -191,9 +189,7 @@
                     itens: Array.from(editItensList.querySelectorAll('.item')).map(item => ({
                         produto: item.querySelector('.produto').value,
                         quantidade: item.querySelector('.quantidade').value,
-                        preco: item.querySelector('.preco').value
                     })),
-                    total: calcularTotal(editItensList) // Função para calcular o total
                 };
 
                 const id = formData.get('id');
@@ -228,8 +224,6 @@
                     </select>
                     <label>Quantidade:</label>
                     <input type="number" class="quantidade" required>
-                    <label>Preço Unitário:</label>
-                    <input type="number" class="preco" required>
                     <button type="button" class="remove-item">Remover</button>
                 `;
                 itemDiv.querySelector('.remove-item').onclick = function () {
@@ -251,8 +245,6 @@
                     </select>
                     <label>Quantidade:</label>
                     <input type="number" class="quantidade" required>
-                    <label>Preço Unitário:</label>
-                    <input type="number" class="preco" required>
                     <button type="button" class="remove-item">Remover</button>
                 `;
                 itemDiv.querySelector('.remove-item').onclick = function () {
@@ -268,16 +260,6 @@
 
             // Adiciona um item ao formulário de edição ao clicar no botão
             document.getElementById('edit-add-item').onclick = editAddItem;
-
-            // Função para calcular o total dos itens
-            function calcularTotal(itensContainer) {
-                const itens = Array.from(itensContainer.querySelectorAll('.item'));
-                return itens.reduce((total, item) => {
-                    const quantidade = parseFloat(item.querySelector('.quantidade').value) || 0;
-                    const preco = parseFloat(item.querySelector('.preco').value) || 0;
-                    return total + (quantidade * preco);
-                }, 0).toFixed(2);
-            }
 
             // Função para preencher o select de clientes
             function populateClienteSelect() {
@@ -354,7 +336,7 @@
                                                         <tr>
                                                             <td>${item.produto.nome}</td>
                                                             <td>${item.quantidade}</td>
-                                                            <td>${item.preco}</td>
+                                                            <td class="preco">${item.preco}</td>
                                                         </tr>
                                                     `).join('')}
                                                 </tbody>
@@ -384,8 +366,6 @@
                                                 </select>
                                                 <label>Quantidade:</label>
                                                 <input type="number" class="quantidade" value="${item.quantidade}" required>
-                                                <label>Preço Unitário:</label>
-                                                <input type="number" class="preco" value="${item.preco}" required>
                                                 <button type="button" class="remove-item">Remover</button>
                                             </div>
                                         `).join('');
@@ -409,7 +389,7 @@
                                             'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
                                         }
                                     })
-                                        .then(response => response.json())
+                                        .then(response => ({id}))
                                         .then(result => {
                                             console.log('Venda excluída:', result);
                                             loadSales(); // Atualiza a lista de vendas

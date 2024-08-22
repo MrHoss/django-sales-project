@@ -1,4 +1,3 @@
-# vendas/serializers.py
 from rest_framework import serializers
 from .models import Venda
 from clientes.models import Cliente
@@ -7,12 +6,16 @@ from itens_venda.models import ItemVenda
 from itens_venda.serializers import ItemVendaSerializer
 from clientes.serializers import ClienteSerializer
 from vendedores.serializers import VendedorSerializer
+from produtos.models import Produto  # Importe o modelo Produto
 
 class VendaBaseSerializer(serializers.ModelSerializer):
     cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
     vendedor = serializers.PrimaryKeyRelatedField(queryset=Vendedor.objects.all())
-    itens = ItemVendaSerializer(many=True)
-    total = serializers.SerializerMethodField()
+    itens = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True
+    )
+    total = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Venda
@@ -22,7 +25,8 @@ class VendaBaseSerializer(serializers.ModelSerializer):
         itens_data = validated_data.pop('itens', [])
         venda = Venda.objects.create(**validated_data)
         for item_data in itens_data:
-            ItemVenda.objects.create(venda=venda, **item_data)
+            produto = Produto.objects.get(id=item_data.pop('produto'))  # Remove 'produto' de item_data
+            ItemVenda.objects.create(venda=venda, produto=produto, **item_data)
         return venda
 
     def update(self, instance, validated_data):
@@ -35,23 +39,24 @@ class VendaBaseSerializer(serializers.ModelSerializer):
         # Atualiza ou cria os itens vendidos
         for item_data in itens_data:
             item_id = item_data.get('id')
+            produto = Produto.objects.get(id=item_data.pop('produto'))  # Remove 'produto' de item_data
             if item_id:
                 item = ItemVenda.objects.get(id=item_id, venda=instance)
-                item.produto = item_data.get('produto', item.produto)
+                item.produto = produto
                 item.quantidade = item_data.get('quantidade', item.quantidade)
-                # O preço será atualizado automaticamente pelo método save() do modelo
                 item.save()
             else:
-                ItemVenda.objects.create(venda=instance, **item_data)
+                ItemVenda.objects.create(venda=instance, produto=produto, **item_data)
         return instance
 
     def get_total(self, obj):
         return sum(item.preco * item.quantidade for item in obj.itens.all())
 
+
 class VendaDetailSerializer(serializers.ModelSerializer):
     cliente = ClienteSerializer()
     vendedor = VendedorSerializer()
-    itens = ItemVendaSerializer(many=True)
+    itens = ItemVendaSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
 
     class Meta:
