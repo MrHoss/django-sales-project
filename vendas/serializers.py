@@ -1,10 +1,16 @@
 # vendas/serializers.py
 from rest_framework import serializers
 from .models import Venda
+from clientes.models import Cliente
+from vendedores.models import Vendedor
 from itens_venda.models import ItemVenda
 from itens_venda.serializers import ItemVendaSerializer
+from clientes.serializers import ClienteSerializer
+from vendedores.serializers import VendedorSerializer
 
-class VendaSerializer(serializers.ModelSerializer):
+class VendaBaseSerializer(serializers.ModelSerializer):
+    cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
+    vendedor = serializers.PrimaryKeyRelatedField(queryset=Vendedor.objects.all())
     itens = ItemVendaSerializer(many=True)
     total = serializers.SerializerMethodField()
 
@@ -38,6 +44,19 @@ class VendaSerializer(serializers.ModelSerializer):
             else:
                 ItemVenda.objects.create(venda=instance, **item_data)
         return instance
+
+    def get_total(self, obj):
+        return sum(item.preco * item.quantidade for item in obj.itens.all())
+
+class VendaDetailSerializer(serializers.ModelSerializer):
+    cliente = ClienteSerializer()
+    vendedor = VendedorSerializer()
+    itens = ItemVendaSerializer(many=True)
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Venda
+        fields = ['id', 'cliente', 'vendedor', 'data_venda', 'itens', 'total']
 
     def get_total(self, obj):
         return sum(item.preco * item.quantidade for item in obj.itens.all())

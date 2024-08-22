@@ -1,0 +1,484 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendas</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+    <style>
+        /* Estilos para o acordeão */
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            transition: 0.4s;
+        }
+
+        .accordion.active,
+        .accordion:hover {
+            background-color: #ccc;
+        }
+
+        .accordion:after {
+            content: '\002B';
+            color: #777;
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .accordion.active:after {
+            content: "\2212";
+        }
+
+        .panel {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .panel table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .panel table,
+        .panel th,
+        .panel td {
+            border: 1px solid #ddd;
+        }
+
+        .panel th,
+        .panel td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .panel th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Vendas</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <button id="open-modal" class="button">Adicionar Nova Venda</button>
+        <table id="vendas-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Vendedor</th>
+                    <th>Data da Venda</th>
+                    <th>Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6" class="no-data">Carregando vendas...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Adicionar Venda -->
+    <div id="venda-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Nova Venda</h2>
+            <form id="venda-form">
+                <label for="cliente">Cliente:</label>
+                <select id="cliente" name="cliente" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="vendedor">Vendedor:</label>
+                <select id="vendedor" name="vendedor" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="data-venda">Data da Venda:</label>
+                <input type="date" id="data-venda" name="data_venda" required>
+                <br><br>
+                <label for="itens">Itens:</label>
+                <div id="itens-list">
+                    <!-- Lista de itens será gerada aqui -->
+                </div>
+                <button type="button" id="add-item" class="button">Adicionar Item</button>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Venda -->
+    <div id="edit-venda-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Venda</h2>
+            <form id="edit-venda-form">
+                <input type="hidden" id="edit-venda-id" name="id">
+                <label for="edit-cliente">Cliente:</label>
+                <select id="edit-cliente" name="cliente" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="edit-vendedor">Vendedor:</label>
+                <select id="edit-vendedor" name="vendedor" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="edit-data-venda">Data da Venda:</label>
+                <input type="date" id="edit-data-venda" name="data_venda" required>
+                <br><br>
+                <label for="edit-itens">Itens:</label>
+                <div id="edit-itens-list">
+                    <!-- Lista de itens será gerada aqui -->
+                </div>
+                <button type="button" id="edit-add-item" class="button">Adicionar Item</button>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openModalButton = document.getElementById('open-modal');
+            const modal = document.getElementById('venda-modal');
+            const editModal = document.getElementById('edit-venda-modal');
+            const closeModalButton = document.querySelectorAll('.close');
+            const form = document.getElementById('venda-form');
+            const editForm = document.getElementById('edit-venda-form');
+            const clienteSelect = document.getElementById('cliente');
+            const vendedorSelect = document.getElementById('vendedor');
+            const editClienteSelect = document.getElementById('edit-cliente');
+            const editVendedorSelect = document.getElementById('edit-vendedor');
+            const itensList = document.getElementById('itens-list');
+            const editItensList = document.getElementById('edit-itens-list');
+
+            // Abre o modal para adicionar venda
+            openModalButton.onclick = function () {
+                modal.style.display = 'block';
+                populateClienteSelect();
+                populateVendedorSelect();
+                populateItemSelect(); // Preenche a lista de itens
+            }
+
+            // Fecha os modais
+            closeModalButton.forEach(button => {
+                button.onclick = function () {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            });
+
+            // Fecha o modal se clicar fora dele
+            window.onclick = function (event) {
+                if (event.target === modal || event.target === editModal) {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            }
+
+            // Lida com o envio do formulário para adicionar venda
+            form.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(form);
+                const data = {
+                    cliente: formData.get('cliente'),
+                    vendedor: formData.get('vendedor'),
+                    data_venda: formData.get('data_venda'),
+                    itens: Array.from(itensList.querySelectorAll('.item')).map(item => ({
+                        produto: item.querySelector('.produto').value,
+                        quantidade: item.querySelector('.quantidade').value,
+                        preco: item.querySelector('.preco').value
+                    })),
+                    total: calcularTotal(itensList) // Função para calcular o total
+                };
+
+                fetch('/api/vendas/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Venda adicionada:', result);
+                        modal.style.display = 'none'; // Fecha o modal
+                        loadSales(); // Atualiza a lista de vendas
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar venda:', error);
+                    });
+            };
+
+            // Lida com o envio do formulário de edição
+            editForm.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(editForm);
+                const data = {
+                    cliente: formData.get('cliente'),
+                    vendedor: formData.get('vendedor'),
+                    data_venda: formData.get('data_venda'),
+                    itens: Array.from(editItensList.querySelectorAll('.item')).map(item => ({
+                        produto: item.querySelector('.produto').value,
+                        quantidade: item.querySelector('.quantidade').value,
+                        preco: item.querySelector('.preco').value
+                    })),
+                    total: calcularTotal(editItensList) // Função para calcular o total
+                };
+
+                const id = formData.get('id');
+
+                fetch(`/api/vendas/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Venda editada:', result);
+                        editModal.style.display = 'none'; // Fecha o modal
+                        loadSales(); // Atualiza a lista de vendas
+                    })
+                    .catch(error => {
+                        console.error('Erro ao editar venda:', error);
+                    });
+            };
+
+            // Função para adicionar um item ao formulário
+            function addItem() {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('item');
+                itemDiv.innerHTML = `
+                    <label>Produto:</label>
+                    <input type="text" class="produto" required>
+                    <label>Quantidade:</label>
+                    <input type="number" class="quantidade" required>
+                    <label>Preço Unitário:</label>
+                    <input type="number" class="preco" required>
+                    <button type="button" class="remove-item">Remover</button>
+                `;
+                itemDiv.querySelector('.remove-item').onclick = function () {
+                    itemDiv.remove();
+                };
+                itensList.appendChild(itemDiv);
+            }
+
+            // Função para adicionar um item ao formulário de edição
+            function editAddItem() {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('item');
+                itemDiv.innerHTML = `
+                    <label>Produto:</label>
+                    <input type="text" class="produto" required>
+                    <label>Quantidade:</label>
+                    <input type="number" class="quantidade" required>
+                    <label>Preço Unitário:</label>
+                    <input type="number" class="preco" required>
+                    <button type="button" class="remove-item">Remover</button>
+                `;
+                itemDiv.querySelector('.remove-item').onclick = function () {
+                    itemDiv.remove();
+                };
+                editItensList.appendChild(itemDiv);
+            }
+
+            // Adiciona um item ao formulário ao clicar no botão
+            document.getElementById('add-item').onclick = addItem;
+
+            // Adiciona um item ao formulário de edição ao clicar no botão
+            document.getElementById('edit-add-item').onclick = editAddItem;
+
+            // Função para calcular o total dos itens
+            function calcularTotal(itensContainer) {
+                const itens = Array.from(itensContainer.querySelectorAll('.item'));
+                return itens.reduce((total, item) => {
+                    const quantidade = parseFloat(item.querySelector('.quantidade').value) || 0;
+                    const preco = parseFloat(item.querySelector('.preco').value) || 0;
+                    return total + (quantidade * preco);
+                }, 0).toFixed(2);
+            }
+
+            // Função para popular o select de clientes
+            function populateClienteSelect() {
+                fetch('/api/clientes/')
+                    .then(response => response.json())
+                    .then(clientes => {
+                        clienteSelect.innerHTML = clientes.map(cliente => `
+                            <option value="${cliente.id}">${cliente.nome}</option>
+                        `).join('');
+                    });
+            }
+
+            // Função para popular o select de vendedores
+            function populateVendedorSelect() {
+                fetch('/api/vendedores/')
+                    .then(response => response.json())
+                    .then(vendedores => {
+                        vendedorSelect.innerHTML = vendedores.map(vendedor => `
+                            <option value="${vendedor.id}">${vendedor.nome}</option>
+                        `).join('');
+                    });
+            }
+
+            // Função para popular o select de itens
+            function populateItemSelect() {
+                fetch('/api/produtos/')
+                    .then(response => response.json())
+                    .then(produtos => {
+                        itensList.innerHTML = produtos.map(produto => `
+                            <div class="item">
+                                <label>Produto:</label>
+                                <input type="text" class="produto" value="${produto.nome}" required>
+                                <label>Quantidade:</label>
+                                <input type="number" class="quantidade" required>
+                                <label>Preço Unitário:</label>
+                                <input type="number" class="preco" value="${produto.preco}" required>
+                                <button type="button" class="remove-item">Remover</button>
+                            </div>
+                        `).join('');
+                    });
+            }
+
+            // Função para carregar as vendas
+            function loadSales() {
+                fetch('/api/vendas/')
+                    .then(response => response.json())
+                    .then(vendas => {
+                        const tableBody = document.querySelector('#vendas-table tbody');
+                        tableBody.innerHTML = vendas.length > 0 ?
+                            vendas.map(venda => `
+                                <tr>
+                                    <td>${venda.id}</td>
+                                    <td>${venda.cliente.nome}</td>
+                                    <td>${venda.vendedor.nome}</td>
+                                    <td>${venda.data_venda}</td>
+                                    <td>${venda.total}</td>
+                                    <td>
+                                        <button data-id="${venda.id}" class="button">Editar</button>
+                                        <button data-id="${venda.id}" class="button" style="background-color: #dc3545;">Deletar</button>
+                                        <button class="accordion">Itens Vendidos</button>
+                                        <div class="panel">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Produto</th>
+                                                        <th>Quantidade</th>
+                                                        <th>Preço Unitário</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${venda.itens.map(item => `
+                                                        <tr>
+                                                            <td>${item.produto.nome}</td>
+                                                            <td>${item.quantidade}</td>
+                                                            <td>${item.preco}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('') :
+                            '<tr><td colspan="6" class="no-data">Nenhuma venda encontrada.</td></tr>';
+
+                        // Adiciona funcionalidade ao botão de editar
+                        document.querySelectorAll('.edit-button').forEach(button => {
+                            button.onclick = function () {
+                                const id = button.getAttribute('data-id');
+                                fetch(`/api/vendas/${id}/`)
+                                    .then(response => response.json())
+                                    .then(venda => {
+                                        document.getElementById('edit-venda-id').value = venda.id;
+                                        document.getElementById('edit-cliente').value = venda.cliente;
+                                        document.getElementById('edit-vendedor').value = venda.vendedor;
+                                        document.getElementById('edit-data-venda').value = venda.data_venda;
+                                        editItensList.innerHTML = venda.itens.map(item => `
+                                            <div class="item">
+                                                <label>Produto:</label>
+                                                <input type="text" class="produto" value="${item.produto}" required>
+                                                <label>Quantidade:</label>
+                                                <input type="number" class="quantidade" value="${item.quantidade}" required>
+                                                <label>Preço Unitário:</label>
+                                                <input type="number" class="preco" value="${item.preco}" required>
+                                                <button type="button" class="remove-item">Remover</button>
+                                            </div>
+                                        `).join('');
+                                        editModal.style.display = 'block';
+                                    });
+                            }
+                        });
+
+                        // Adiciona funcionalidade ao botão de excluir
+                        document.querySelectorAll('.delete-button').forEach(button => {
+                            button.onclick = function () {
+                                const id = button.getAttribute('data-id');
+                                if (confirm('Tem certeza de que deseja excluir esta venda?')) {
+                                    fetch(`/api/vendas/${id}/`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                                        }
+                                    })
+                                        .then(response => response.json())
+                                        .then(result => {
+                                            console.log('Venda excluída:', result);
+                                            loadSales(); // Atualiza a lista de vendas
+                                        })
+                                        .catch(error => {
+                                            console.error('Erro ao excluir venda:', error);
+                                        });
+                                }
+                            }
+                        });
+
+                        // Adiciona funcionalidade ao acordeão
+                        document.querySelectorAll('.accordion').forEach(button => {
+                            button.onclick = function () {
+                                this.classList.toggle('active');
+                                const panel = this.nextElementSibling;
+                                panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+                            }
+                        });
+                    });
+            }
+
+            loadSales(); // Carrega as vendas ao iniciar
+        });
+    </script>
+</body>
+
+</html>

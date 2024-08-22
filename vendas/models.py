@@ -1,6 +1,7 @@
 from django.db import models
 from clientes.models import Cliente
 from vendedores.models import Vendedor
+from itens_venda.models import ItemVenda
 
 class Venda(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -12,5 +13,4 @@ class Venda(models.Model):
 
     @property
     def total(self):
-        from itens_venda.models import ItemVenda
         return sum(item.preco * item.quantidade for item in ItemVenda.objects.filter(venda=self))

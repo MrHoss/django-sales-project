@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Produtos</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <button id="open-modal" class="button">Adicionar Novo Produto</button>
+        <table id="produtos-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" class="no-data">Carregando produtos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Adicionar Produto -->
+    <div id="produto-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Novo Produto</h2>
+            <form id="produto-form">
+                <label for="grupo">Grupo:</label>
+                <select id="grupo" name="grupo" required>
+                    <!-- As opções devem ser preenchidas com base nos dados da API ou pelo backend -->
+                </select>
+                <br><br>
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" required>
+                <br><br>
+                <label for="preco">Preço:</label>
+                <input type="number" id="preco" name="preco" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Produto -->
+    <div id="edit-produto-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Produto</h2>
+            <form id="edit-produto-form">
+                <input type="hidden" id="edit-produto-id" name="id">
+                <label for="edit-grupo">Grupo:</label>
+                <select id="edit-grupo" name="grupo" required>
+                    <!-- As opções devem ser preenchidas com base nos dados da API ou pelo backend -->
+                </select>
+                <br><br>
+                <label for="edit-nome">Nome:</label>
+                <input type="text" id="edit-nome" name="nome" required>
+                <br><br>
+                <label for="edit-preco">Preço:</label>
+                <input type="number" id="edit-preco" name="preco" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openModalButton = document.getElementById('open-modal');
+            const modal = document.getElementById('produto-modal');
+            const editModal = document.getElementById('edit-produto-modal');
+            const closeModalButton = document.querySelectorAll('.close');
+            const form = document.getElementById('produto-form');
+            const editForm = document.getElementById('edit-produto-form');
+
+            // Abre o modal para adicionar produto
+            openModalButton.onclick = function () {
+                modal.style.display = 'block';
+            }
+
+            // Fecha os modais
+            closeModalButton.forEach(button => {
+                button.onclick = function () {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            });
+
+            // Fecha o modal se clicar fora dele
+            window.onclick = function (event) {
+                if (event.target === modal || event.target === editModal) {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            }
+
+            // Preenche o select com os grupos
+            function loadGroups() {
+                fetch('/api/grupo_produto/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const grupoSelect = document.getElementById('grupo');
+                        const editGrupoSelect = document.getElementById('edit-grupo');
+                        grupoSelect.innerHTML = ''; // Limpa opções existentes
+                        editGrupoSelect.innerHTML = ''; // Limpa opções existentes
+                        data.forEach(grupo => {
+                            const option = document.createElement('option');
+                            option.value = grupo.id;
+                            option.textContent = grupo.nome;
+                            grupoSelect.appendChild(option);
+                            editGrupoSelect.appendChild(option.cloneNode(true)); // Adiciona a mesma opção ao select de edição
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar grupos:', error);
+                    });
+            }
+            loadGroups();
+
+            // Lida com o envio do formulário para adicionar produto
+            form.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(form);
+                const data = {
+                    grupo: formData.get('grupo'),
+                    nome: formData.get('nome'),
+                    preco: formData.get('preco')
+                };
+
+                fetch('/api/produtos/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Produto adicionado:', result);
+                        modal.style.display = 'none'; // Fecha o modal
+                        loadProducts(); // Atualiza a lista de produtos
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar produto:', error);
+                    });
+            };
+
+            // Lida com o envio do formulário de edição
+            editForm.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(editForm);
+                const data = {
+                    grupo: formData.get('grupo'),
+                    nome: formData.get('nome'),
+                    preco: formData.get('preco')
+                };
+
+                const id = formData.get('id');
+
+                fetch(`/api/produtos/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Produto atualizado:', result);
+                        editModal.style.display = 'none'; // Fecha o modal
+                        loadProducts(); // Atualiza a lista de produtos
+                    })
+                    .catch(error => {
+                        console.error('Erro ao atualizar produto:', error);
+                    });
+            };
+
+            // Lida com a exclusão de um produto
+            window.deleteProduct = function (id) {
+                if (confirm('Você tem certeza que deseja excluir este produto?')) {
+                    fetch(`/api/produtos/${id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta da API');
+                            }
+                            return { id };
+                        })
+                        .then(result => {
+                            console.log('Produto excluído:', result);
+                            loadProducts(); // Atualiza a lista de produtos
+                        })
+                        .catch(error => {
+                            console.error('Erro ao excluir produto:', error);
+                        });
+                }
+            }
+
+            // Carrega e atualiza a lista de produtos
+            function loadProducts() {
+                fetch('/api/produtos/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableBody = document.querySelector('#produtos-table tbody');
+                        tableBody.innerHTML = ''; // Limpa a mensagem de carregamento
+
+                        if (data.length > 0) {
+                            data.forEach(produto => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${produto.id}</td>
+                                    <td>${produto.nome}</td>
+                                    <td>R$ ${produto.preco}</td>
+                                    <td>
+                                        <button onclick="editProduct(${produto.id})" class="button">Editar</button>
+                                        <button onclick="deleteProduct(${produto.id})" class="button" style="background-color: #dc3545;">Deletar</button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        } else {
+                            tableBody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhum produto encontrado</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar produtos:', error);
+                    });
+            }
+            loadProducts();
+
+            // Preenche e abre o modal de edição
+            window.editProduct = function (id) {
+                fetch(`/api/produtos/${id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('edit-produto-id').value = data.id;
+                        document.getElementById('edit-nome').value = data.nome;
+                        document.getElementById('edit-preco').value = data.preco;
+                        document.getElementById('edit-grupo').value = data.grupo;
+
+                        editModal.style.display = 'block'; // Abre o modal de edição
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar produto para edição:', error);
+                    });
+            }
+        });
+    </script>
+</body>
+
+</html>

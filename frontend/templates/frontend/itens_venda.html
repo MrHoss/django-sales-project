@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itens de Venda</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Itens de Venda</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <button id="open-modal" class="button">Adicionar Novo Item</button>
+        <table id="itens-venda-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Preço</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" class="no-data">Carregando itens de venda...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Adicionar Item de Venda -->
+    <div id="item-venda-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Novo Item de Venda</h2>
+            <form id="item-venda-form">
+                <label for="produto">Produto:</label>
+                <select id="produto" name="produto" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="quantidade">Quantidade:</label>
+                <input type="number" id="quantidade" name="quantidade" min="1" required>
+                <br><br>
+                <label for="preco">Preço:</label>
+                <input type="number" id="preco" name="preco" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Item de Venda -->
+    <div id="edit-item-venda-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Item de Venda</h2>
+            <form id="edit-item-venda-form">
+                <input type="hidden" id="edit-item-venda-id" name="id">
+                <label for="edit-produto">Produto:</label>
+                <select id="edit-produto" name="produto" required>
+                    <!-- Options serão preenchidas via JavaScript -->
+                </select>
+                <br><br>
+                <label for="edit-quantidade">Quantidade:</label>
+                <input type="number" id="edit-quantidade" name="quantidade" min="1" required>
+                <br><br>
+                <label for="edit-preco">Preço:</label>
+                <input type="number" id="edit-preco" name="preco" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openModalButton = document.getElementById('open-modal');
+            const modal = document.getElementById('item-venda-modal');
+            const editModal = document.getElementById('edit-item-venda-modal');
+            const closeModalButton = document.querySelectorAll('.close');
+            const form = document.getElementById('item-venda-form');
+            const editForm = document.getElementById('edit-item-venda-form');
+            const produtoSelect = document.getElementById('produto');
+            const editProdutoSelect = document.getElementById('edit-produto');
+
+            // Abre o modal para adicionar item de venda
+            openModalButton.onclick = function () {
+                modal.style.display = 'block';
+                populateProdutoSelect(); // Preenche o select de produtos
+            }
+
+            // Fecha os modais
+            closeModalButton.forEach(button => {
+                button.onclick = function () {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            });
+
+            // Fecha o modal se clicar fora dele
+            window.onclick = function (event) {
+                if (event.target === modal || event.target === editModal) {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            }
+
+            // Lida com o envio do formulário para adicionar item de venda
+            form.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(form);
+                const data = {
+                    produto: formData.get('produto'),
+                    quantidade: formData.get('quantidade'),
+                    preco: formData.get('preco')
+                };
+
+                fetch('/api/itens_venda/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Item de venda adicionado:', result);
+                        modal.style.display = 'none'; // Fecha o modal
+                        loadItems(); // Atualiza a lista de itens
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar item de venda:', error);
+                    });
+            };
+
+            // Lida com o envio do formulário de edição
+            editForm.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(editForm);
+                const data = {
+                    produto: formData.get('produto'),
+                    quantidade: formData.get('quantidade'),
+                    preco: formData.get('preco')
+                };
+
+                const id = formData.get('id');
+
+                fetch(`/api/itens_venda/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Item de venda atualizado:', result);
+                        editModal.style.display = 'none'; // Fecha o modal
+                        loadItems(); // Atualiza a lista de itens
+                    })
+                    .catch(error => {
+                        console.error('Erro ao atualizar item de venda:', error);
+                    });
+            };
+
+            // Lida com a exclusão de um item de venda
+            window.deleteItem = function (id) {
+                if (confirm('Você tem certeza que deseja excluir este item de venda?')) {
+                    fetch(`/api/itens_venda/${id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta da API');
+                            }
+                            return { id };
+                        })
+                        .then(result => {
+                            console.log('Item de venda excluído:', result);
+                            loadItems(); // Atualiza a lista de itens
+                        })
+                        .catch(error => {
+                            console.error('Erro ao excluir item de venda:', error);
+                        });
+                }
+            }
+
+            // Carrega e atualiza a lista de itens de venda
+            function loadItems() {
+                fetch('/api/itens_venda/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableBody = document.querySelector('#itens-venda-table tbody');
+                        tableBody.innerHTML = ''; // Limpa a mensagem de carregamento
+
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${item.id}</td>
+                                    <td>${item.produto.nome}</td>
+                                    <td>${item.quantidade}</td>
+                                    <td>${item.preco.toFixed(2)}</td>
+                                    <td>
+                                        <button onclick="editItem(${item.id})" class="button">Editar</button>
+                                        <button onclick="deleteItem(${item.id})" class="button" style="background-color: #dc3545;">Deletar</button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        } else {
+                            tableBody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhum item de venda encontrado</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar itens de venda:', error);
+                    });
+            }
+            loadItems();
+
+            // Preenche e abre o modal de edição
+            window.editItem = function (id) {
+                fetch(`/api/itens_venda/${id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('edit-item-venda-id').value = data.id;
+                        document.getElementById('edit-quantidade').value = data.quantidade;
+                        document.getElementById('edit-preco').value = data.preco;
+                        populateProdutoSelect(data.produto.id); // Preenche o select de produtos e seleciona o atual
+                        editModal.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do item de venda:', error);
+                    });
+            };
+
+            // Preenche o select de produtos
+            function populateProdutoSelect(selectedId = null) {
+                fetch('/api/produtos/') // Supondo que exista um endpoint para listar produtos
+                    .then(response => response.json())
+                    .then(data => {
+                        produtoSelect.innerHTML = '';
+                        editProdutoSelect.innerHTML = '';
+
+                        data.forEach(produto => {
+                            const option = document.createElement('option');
+                            option.value = produto.id;
+                            option.textContent = produto.nome;
+
+                            if (produto.id === selectedId) {
+                                option.selected = true;
+                            }
+
+                            produtoSelect.appendChild(option);
+                            editProdutoSelect.appendChild(option.cloneNode(true));
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar produtos:', error);
+                    });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,13 +1,11 @@
+# itens_venda/serializers.py
 from rest_framework import serializers
 from .models import ItemVenda
-from produtos.models import Produto
+from produtos.serializers import ProdutoSerializer
 
 class ItemVendaSerializer(serializers.ModelSerializer):
-    produto = serializers.PrimaryKeyRelatedField(queryset=Produto.objects.all())
+    produto = ProdutoSerializer()  # Use o ProdutoSerializer aqui
 
     class Meta:
         model = ItemVenda
         fields = ['produto', 'quantidade', 'preco']
-        extra_kwargs = {
-            'preco': {'required': False}  # Preço não é necessário na criação
-        }

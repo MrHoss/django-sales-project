@@ -1,0 +1,255 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendedores</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Vendedores</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <button id="open-modal" class="button">Adicionar Novo Vendedor</button>
+        <table id="vendedores-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Comissão</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" class="no-data">Carregando vendedores...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Adicionar Vendedor -->
+    <div id="vendedor-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Novo Vendedor</h2>
+            <form id="vendedor-form">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" required>
+                <br><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <br><br>
+                <label for="comissao">Comissão:</label>
+                <input type="number" id="comissao" name="comissao" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Vendedor -->
+    <div id="edit-vendedor-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Vendedor</h2>
+            <form id="edit-vendedor-form">
+                <input type="hidden" id="edit-vendedor-id" name="id">
+                <label for="edit-nome">Nome:</label>
+                <input type="text" id="edit-nome" name="nome" required>
+                <br><br>
+                <label for="edit-email">Email:</label>
+                <input type="email" id="edit-email" name="email" required>
+                <br><br>
+                <label for="edit-comissao">Comissão:</label>
+                <input type="number" id="edit-comissao" name="comissao" step="0.01" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openModalButton = document.getElementById('open-modal');
+            const modal = document.getElementById('vendedor-modal');
+            const editModal = document.getElementById('edit-vendedor-modal');
+            const closeModalButton = document.querySelectorAll('.close');
+            const form = document.getElementById('vendedor-form');
+            const editForm = document.getElementById('edit-vendedor-form');
+
+            // Abre o modal para adicionar vendedor
+            openModalButton.onclick = function () {
+                modal.style.display = 'block';
+            }
+
+            // Fecha os modais
+            closeModalButton.forEach(button => {
+                button.onclick = function () {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            });
+
+            // Fecha o modal se clicar fora dele
+            window.onclick = function (event) {
+                if (event.target === modal || event.target === editModal) {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            }
+
+            // Lida com o envio do formulário para adicionar vendedor
+            form.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(form);
+                const data = {
+                    nome: formData.get('nome'),
+                    email: formData.get('email'),
+                    comissao: formData.get('comissao')
+                };
+
+                fetch('/api/vendedores/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Vendedor adicionado:', result);
+                        modal.style.display = 'none'; // Fecha o modal
+                        loadVendedores(); // Atualiza a lista de vendedores
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar vendedor:', error);
+                    });
+            };
+
+            // Lida com o envio do formulário de edição
+            editForm.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(editForm);
+                const data = {
+                    nome: formData.get('nome'),
+                    email: formData.get('email'),
+                    comissao: formData.get('comissao')
+                };
+
+                const id = formData.get('id');
+
+                fetch(`/api/vendedores/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Vendedor atualizado:', result);
+                        editModal.style.display = 'none'; // Fecha o modal
+                        loadVendedores(); // Atualiza a lista de vendedores
+                    })
+                    .catch(error => {
+                        console.error('Erro ao atualizar vendedor:', error);
+                    });
+            };
+
+            // Lida com a exclusão de um vendedor
+            window.deleteVendedor = function (id) {
+                if (confirm('Você tem certeza que deseja excluir este vendedor?')) {
+                    fetch(`/api/vendedores/${id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta da API');
+                            }
+                            return { id };
+                        })
+                        .then(result => {
+                            console.log('Vendedor excluído:', result);
+                            loadVendedores(); // Atualiza a lista de vendedores
+                        })
+                        .catch(error => {
+                            console.error('Erro ao excluir vendedor:', error);
+                        });
+                }
+            }
+
+            // Carrega e atualiza a lista de vendedores
+            function loadVendedores() {
+                fetch('/api/vendedores/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableBody = document.querySelector('#vendedores-table tbody');
+                        tableBody.innerHTML = ''; // Limpa a mensagem de carregamento
+
+                        if (data.length > 0) {
+                            data.forEach(vendedor => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${vendedor.id}</td>
+                                    <td>${vendedor.nome}</td>
+                                    <td>${vendedor.email}</td>
+                                    <td>${vendedor.comissao}</td>
+                                    <td>
+                                        <button onclick="editVendedor(${vendedor.id})" class="button">Editar</button>
+                                        <button onclick="deleteVendedor(${vendedor.id})" class="button" style="background-color: #dc3545;">Deletar</button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        } else {
+                            tableBody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhum vendedor encontrado</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar vendedores:', error);
+                    });
+            }
+            loadVendedores();
+
+            // Preenche e abre o modal de edição
+            window.editVendedor = function (id) {
+                fetch(`/api/vendedores/${id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('edit-vendedor-id').value = data.id;
+                        document.getElementById('edit-nome').value = data.nome;
+                        document.getElementById('edit-email').value = data.email;
+                        document.getElementById('edit-comissao').value = data.comissao;
+                        editModal.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do vendedor:', error);
+                    });
+            };
+        });
+    </script>
+</body>
+
+</html>

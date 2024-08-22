@@ -10,6 +10,18 @@ from .serializers import VendaSerializer
 from vendas.models import Venda
 from itens_venda.models import ItemVenda
 
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from io import BytesIO
+import pandas as pd
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from .serializers import VendaSerializer
+from vendas.models import Venda
+from itens_venda.models import ItemVenda
+
 class RelatorioViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def vendas(self, request):
@@ -17,9 +29,8 @@ class RelatorioViewSet(viewsets.ViewSet):
         data_final = request.query_params.get('data_final')
         vendedor = request.query_params.get('vendedor')
         cliente = request.query_params.get('cliente')
-        format = request.query_params.get('format', 'pdf')
+        formato = request.query_params.get('formato', 'pdf')
 
-        # Filtrar vendas conforme os parâmetros
         queryset = Venda.objects.all()
         if data_inicial and data_final:
             queryset = queryset.filter(data_venda__range=[data_inicial, data_final])
@@ -28,10 +39,12 @@ class RelatorioViewSet(viewsets.ViewSet):
         if cliente:
             queryset = queryset.filter(cliente__nome__icontains=cliente)
 
-        if format == 'excel':
+        if formato == 'excel':
             return self.export_to_excel(queryset)
         else:
             return self.export_to_pdf(queryset)
+
+
 
     def export_to_excel(self, queryset):
         vendas = []

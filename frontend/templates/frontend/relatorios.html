@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Relatórios</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Gerar Relatórios</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'itens_venda' %}" class="button">Itens de Venda</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'sobre' %}" class="button">Sobre</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <h2>Gerar Relatório de Vendas</h2>
+        <form id="relatorio-form">
+            <label for="data-inicial">Data Inicial:</label>
+            <input type="date" id="data-inicial" name="data_inicial">
+            <br><br>
+            <label for="data-final">Data Final:</label>
+            <input type="date" id="data-final" name="data_final">
+            <br><br>
+            <label for="vendedor">Vendedor:</label>
+            <select id="vendedor" name="vendedor">
+                <option value="">Selecione um vendedor</option>
+            </select>
+            <br><br>
+            <label for="cliente">Cliente:</label>
+            <select id="cliente" name="cliente">
+                <option value="">Selecione um cliente</option>
+            </select>
+            <br><br>
+            <button type="button" id="pdf-button" class="button">Gerar PDF</button>
+            <button type="button" id="excel-button" class="button">Gerar Excel</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pdfButton = document.getElementById('pdf-button');
+            const excelButton = document.getElementById('excel-button');
+            const form = document.getElementById('relatorio-form');
+            const vendedorSelect = document.getElementById('vendedor');
+            const clienteSelect = document.getElementById('cliente');
+
+            // Função para carregar vendedores e clientes
+            function carregarOpcoes(endpoint, selectElement) {
+                fetch(endpoint)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.nome; // Utiliza o nome em vez do ID
+                            option.textContent = item.nome;
+                            selectElement.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error(`Erro ao carregar opções: ${error}`);
+                    });
+            }
+
+            // Carregar vendedores e clientes
+            carregarOpcoes('/api/vendedores/', vendedorSelect);
+            carregarOpcoes('/api/clientes/', clienteSelect);
+
+            function gerarRelatorio(format) {
+                const formData = new FormData(form);
+                const params = new URLSearchParams();
+
+                for (const [key, value] of formData.entries()) {
+                    if (value) {
+                        params.append(key, value);
+                    }
+                }
+
+                params.append('formato', format);
+
+                const url = `/api/relatorios/vendas/?${params.toString()}`;
+
+                window.open(url, '_blank');
+            }
+
+            pdfButton.onclick = function () {
+                gerarRelatorio('pdf');
+            };
+
+            excelButton.onclick = function () {
+                gerarRelatorio('excel');
+            };
+        });
+    </script>
+</body>
+
+</html>

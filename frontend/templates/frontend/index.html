@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Inicial</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Página Inicial</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="welcome-container">
+        <h2 class="welcome-message">Bem-vindo ao sistema de gestão! Selecione uma das opções acima para começar.</h2>
+    </div>
+</body>
+
+</html>

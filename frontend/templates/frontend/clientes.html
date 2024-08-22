@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes</title>
+    <link rel="stylesheet" href="{% static 'frontend/static/styles.css' %}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Clientes</h1>
+    </div>
+    <div class="container">
+        <a href="{% url 'produtos' %}" class="button">Produtos</a>
+        <a href="{% url 'grupo_produto' %}" class="button">Grupo de Produtos</a>
+        <a href="{% url 'clientes' %}" class="button">Clientes</a>
+        <a href="{% url 'vendedores' %}" class="button">Vendedores</a>
+        <a href="{% url 'vendas' %}" class="button">Vendas</a>
+        <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+    </div>
+    <div class="container">
+        <a href="{% url 'index' %}" class="button">Voltar para Início</a>
+        <button id="open-modal" class="button">Adicionar Novo Cliente</button>
+        <table id="clientes-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6" class="no-data">Carregando clientes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Adicionar Cliente -->
+    <div id="cliente-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Novo Cliente</h2>
+            <form id="cliente-form">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" required>
+                <br><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <br><br>
+                <label for="telefone">Telefone:</label>
+                <input type="text" id="telefone" name="telefone" required>
+                <br><br>
+                <label for="endereco">Endereço:</label>
+                <input type="text" id="endereco" name="endereco" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Cliente -->
+    <div id="edit-cliente-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Cliente</h2>
+            <form id="edit-cliente-form">
+                <input type="hidden" id="edit-cliente-id" name="id">
+                <label for="edit-nome">Nome:</label>
+                <input type="text" id="edit-nome" name="nome" required>
+                <br><br>
+                <label for="edit-email">Email:</label>
+                <input type="email" id="edit-email" name="email" required>
+                <br><br>
+                <label for="edit-telefone">Telefone:</label>
+                <input type="text" id="edit-telefone" name="telefone" required>
+                <br><br>
+                <label for="edit-endereco">Endereço:</label>
+                <input type="text" id="edit-endereco" name="endereco" required>
+                <br><br>
+                <button type="submit" class="button">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openModalButton = document.getElementById('open-modal');
+            const modal = document.getElementById('cliente-modal');
+            const editModal = document.getElementById('edit-cliente-modal');
+            const closeModalButton = document.querySelectorAll('.close');
+            const form = document.getElementById('cliente-form');
+            const editForm = document.getElementById('edit-cliente-form');
+
+            // Abre o modal para adicionar cliente
+            openModalButton.onclick = function () {
+                modal.style.display = 'block';
+            }
+
+            // Fecha os modais
+            closeModalButton.forEach(button => {
+                button.onclick = function () {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            });
+
+            // Fecha o modal se clicar fora dele
+            window.onclick = function (event) {
+                if (event.target === modal || event.target === editModal) {
+                    modal.style.display = 'none';
+                    editModal.style.display = 'none';
+                }
+            }
+
+            // Lida com o envio do formulário para adicionar cliente
+            form.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(form);
+                const data = {
+                    nome: formData.get('nome'),
+                    email: formData.get('email'),
+                    telefone: formData.get('telefone'),
+                    endereco: formData.get('endereco')
+                };
+
+                fetch('/api/clientes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Cliente adicionado:', result);
+                        modal.style.display = 'none'; // Fecha o modal
+                        loadClients(); // Atualiza a lista de clientes
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar cliente:', error);
+                    });
+            };
+
+            // Lida com o envio do formulário de edição
+            editForm.onsubmit = function (event) {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                const formData = new FormData(editForm);
+                const data = {
+                    nome: formData.get('nome'),
+                    email: formData.get('email'),
+                    telefone: formData.get('telefone'),
+                    endereco: formData.get('endereco')
+                };
+
+                const id = formData.get('id');
+
+                fetch(`/api/clientes/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Adiciona o token CSRF
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Cliente atualizado:', result);
+                        editModal.style.display = 'none'; // Fecha o modal
+                        loadClients(); // Atualiza a lista de clientes
+                    })
+                    .catch(error => {
+                        console.error('Erro ao atualizar cliente:', error);
+                    });
+            };
+
+            // Lida com a exclusão de um cliente
+            window.deleteClient = function (id) {
+                if (confirm('Você tem certeza que deseja excluir este cliente?')) {
+                    fetch(`/api/clientes/${id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta da API');
+                            }
+                            return { id };
+                        })
+                        .then(result => {
+                            console.log('Cliente excluído:', result);
+                            loadClients(); // Atualiza a lista de clientes
+                        })
+                        .catch(error => {
+                            console.error('Erro ao excluir cliente:', error);
+                        });
+                }
+            }
+
+            // Carrega e atualiza a lista de clientes
+            function loadClients() {
+                fetch('/api/clientes/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableBody = document.querySelector('#clientes-table tbody');
+                        tableBody.innerHTML = ''; // Limpa a mensagem de carregamento
+
+                        if (data.length > 0) {
+                            data.forEach(cliente => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${cliente.id}</td>
+                                    <td>${cliente.nome}</td>
+                                    <td>${cliente.email}</td>
+                                    <td>${cliente.telefone}</td>
+                                    <td>${cliente.endereco}</td>
+                                    <td>
+                                        <button onclick="editClient(${cliente.id})" class="button">Editar</button>
+                                        <button onclick="deleteClient(${cliente.id})" class="button" style="background-color: #dc3545;">Deletar</button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        } else {
+                            tableBody.innerHTML = '<tr><td colspan="6" class="no-data">Nenhum cliente encontrado</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar clientes:', error);
+                    });
+            }
+            loadClients();
+
+            // Preenche e abre o modal de edição
+            window.editClient = function (id) {
+                fetch(`/api/clientes/${id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('edit-cliente-id').value = data.id;
+                        document.getElementById('edit-nome').value = data.nome;
+                        document.getElementById('edit-email').value = data.email;
+                        document.getElementById('edit-telefone').value = data.telefone;
+                        document.getElementById('edit-endereco').value = data.endereco;
+                        editModal.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do cliente:', error);
+                    });
+            };
+        });
+    </script>
+</body>
+
+</html>
