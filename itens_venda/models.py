@@ -8,7 +8,6 @@ class ItemVenda(models.Model):
     preco = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Define o preço do produto se não estiver definido
         if self.preco is None:
             self.preco = self.produto.preco
         super().save(*args, **kwargs)

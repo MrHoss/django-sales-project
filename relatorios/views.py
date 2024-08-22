@@ -88,7 +88,6 @@ class RelatorioViewSet(viewsets.ViewSet):
         template = get_template(template_path)
         html = template.render(context)
         
-        # Use BytesIO to handle the content
         result = BytesIO()
         pisa_status = pisa.CreatePDF(BytesIO(html.encode('utf-8')), dest=result)
         result.seek(0)

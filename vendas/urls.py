@@ -4,11 +4,9 @@ from .views import VendaViewSet
 
 app_name = 'vendas'
 
-# Criação do router
 router = DefaultRouter()
 router.register(r'vendas', VendaViewSet, basename='vendas')
 
 urlpatterns = [
-    # Inclui todas as rotas definidas pelo router
     path('', include(router.urls)),
 ]

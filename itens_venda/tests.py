@@ -1,20 +1,25 @@
 from django.test import TestCase
-from .models import ItemVenda
 from vendas.models import Venda
-from produtos.models import Produto, GrupoProduto
 from clientes.models import Cliente
 from vendedores.models import Vendedor
+from itens_venda.models import ItemVenda
+from produtos.models import Produto, GrupoProduto
 
 class ItemVendaTestCase(TestCase):
     def setUp(self):
-        grupo = GrupoProduto.objects.create(nome="Eletrônicos")
-        produto = Produto.objects.create(nome="Smartphone", preco=1200.00, grupo=grupo)
-        cliente = Cliente.objects.create(nome="Bruno", email="bruno@example.com")
-        vendedor = Vendedor.objects.create(nome="Paula", email="paula@example.com", comissao=8.00)
-        venda = Venda.objects.create(cliente=cliente, vendedor=vendedor, total=1200.00)
-        ItemVenda.objects.create(venda=venda, produto=produto, quantidade=1, preco=1200.00)
+        cliente = Cliente.objects.create(nome="Carlos", email="carlos@example.com")
+        vendedor = Vendedor.objects.create(nome="Ana", email="ana@example.com", comissao=5.00)
+
+        grupo = GrupoProduto.objects.create(nome="Grupo1")
+
+        produto1 = Produto.objects.create(nome="Produto1", preco=50.00, grupo=grupo)
+
+        self.venda = Venda.objects.create(cliente=cliente, vendedor=vendedor, data_venda="2024-08-22")
+
+        self.item1 = ItemVenda.objects.create(venda=self.venda, produto=produto1, quantidade=2, preco=produto1.preco)
 
     def test_item_venda_criado(self):
-        item = ItemVenda.objects.get(produto__nome="Smartphone")
-        self.assertEqual(item.quantidade, 1)
-        self.assertEqual(item.preco, 1200.00)
+        item = ItemVenda.objects.get(produto__nome="Produto1")
+        self.assertEqual(item.quantidade, 2)
+        self.assertEqual(item.preco, 50.00)
+        self.assertEqual(item.venda, self.venda)

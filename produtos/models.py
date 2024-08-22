@@ -1,4 +1,3 @@
-# produtos/models.py
 from django.db import models
 from grupo_produto.models import GrupoProduto
 

@@ -1,10 +1,9 @@
-# itens_venda/serializers.py
 from rest_framework import serializers
 from .models import ItemVenda
 from produtos.serializers import ProdutoSerializer
 
 class ItemVendaSerializer(serializers.ModelSerializer):
-    produto = ProdutoSerializer()  # Use o ProdutoSerializer aqui
+    produto = ProdutoSerializer()
 
     class Meta:
         model = ItemVenda

@@ -1,4 +1,3 @@
-# produtos/serializers.py
 from rest_framework import serializers
 from .models import Produto
 from grupo_produto.models import GrupoProduto
