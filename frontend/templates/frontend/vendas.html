@@ -282,8 +282,10 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('item');
                 itemDiv.innerHTML = `
-                    <label>Produto:</label>
-                    <input type="text" class="produto" required>
+                    <label for="produto">Produto:</label>
+                    <select class="produto" name="produto" required>
+                        <!-- Options serão preenchidas via JavaScript -->
+                    </select>
                     <label>Quantidade:</label>
                     <input type="number" class="quantidade" required>
                     <label>Preço Unitário:</label>
@@ -294,6 +296,8 @@
                     itemDiv.remove();
                 };
                 itensList.appendChild(itemDiv);
+                populateItemSelect(itensList);
+
             }
 
             // Função para adicionar um item ao formulário de edição
@@ -301,8 +305,10 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('item');
                 itemDiv.innerHTML = `
-                    <label>Produto:</label>
-                    <input type="text" class="produto" required>
+                    <label for="produto">Produto:</label>
+                    <select class="produto" name="produto" required>
+                        <!-- Options serão preenchidas via JavaScript -->
+                    </select>
                     <label>Quantidade:</label>
                     <input type="number" class="quantidade" required>
                     <label>Preço Unitário:</label>
@@ -313,6 +319,8 @@
                     itemDiv.remove();
                 };
                 editItensList.appendChild(itemDiv);
+                populateItemSelect(editItensList); // Preenche a lista de produtos
+
             }
 
             // Adiciona um item ao formulário ao clicar no botão
@@ -331,44 +339,46 @@
                 }, 0).toFixed(2);
             }
 
-            // Função para popular o select de clientes
+            // Função para preencher o select de clientes
             function populateClienteSelect() {
                 fetch('/api/clientes/')
                     .then(response => response.json())
                     .then(clientes => {
-                        clienteSelect.innerHTML = clientes.map(cliente => `
-                            <option value="${cliente.id}">${cliente.nome}</option>
-                        `).join('');
+                        const options = clientes.map(cliente => `<option value="${cliente.id}">${cliente.nome}</option>`).join('');
+                        clienteSelect.innerHTML = options;
+                        editClienteSelect.innerHTML = options; // Também preenche no modal de edição
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar clientes:', error);
                     });
             }
 
-            // Função para popular o select de vendedores
+            // Função para preencher o select de vendedores
             function populateVendedorSelect() {
                 fetch('/api/vendedores/')
                     .then(response => response.json())
                     .then(vendedores => {
-                        vendedorSelect.innerHTML = vendedores.map(vendedor => `
-                            <option value="${vendedor.id}">${vendedor.nome}</option>
-                        `).join('');
+                        const options = vendedores.map(vendedor => `<option value="${vendedor.id}">${vendedor.nome}</option>`).join('');
+                        vendedorSelect.innerHTML = options;
+                        editVendedorSelect.innerHTML = options; // Também preenche no modal de edição
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar vendedores:', error);
                     });
             }
 
-            // Função para popular o select de itens
-            function populateItemSelect() {
+            // Função para preencher a lista de produtos
+            function populateItemSelect(container = document) {
                 fetch('/api/produtos/')
                     .then(response => response.json())
                     .then(produtos => {
-                        itensList.innerHTML = produtos.map(produto => `
-                            <div class="item">
-                                <label>Produto:</label>
-                                <input type="text" class="produto" value="${produto.nome}" required>
-                                <label>Quantidade:</label>
-                                <input type="number" class="quantidade" required>
-                                <label>Preço Unitário:</label>
-                                <input type="number" class="preco" value="${produto.preco}" required>
-                                <button type="button" class="remove-item">Remover</button>
-                            </div>
-                        `).join('');
+                        const options = produtos.map(produto => `<option value="${produto.id}">${produto.nome}</option>`).join('');
+                        container.querySelectorAll('select.produto').forEach(select => {
+                            select.innerHTML = options;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar produtos:', error);
                     });
             }
 
@@ -387,8 +397,8 @@
                                     <td>${venda.data_venda}</td>
                                     <td>${venda.total}</td>
                                     <td>
-                                        <button data-id="${venda.id}" class="button">Editar</button>
-                                        <button data-id="${venda.id}" class="button" style="background-color: #dc3545;">Deletar</button>
+                                        <button data-id="${venda.id}" class="button edit-button">Editar</button>
+                                        <button data-id="${venda.id}" class="button delete-button" style="background-color: #dc3545;">Deletar</button>
                                         <button class="accordion">Itens Vendidos</button>
                                         <div class="panel">
                                             <table>
@@ -428,8 +438,10 @@
                                         document.getElementById('edit-data-venda').value = venda.data_venda;
                                         editItensList.innerHTML = venda.itens.map(item => `
                                             <div class="item">
-                                                <label>Produto:</label>
-                                                <input type="text" class="produto" value="${item.produto}" required>
+                                                <label for="produto">Produto:</label>
+                                                <select class="produto" name="produto" required>
+                                                    <!-- Options serão preenchidas via JavaScript -->
+                                                </select>
                                                 <label>Quantidade:</label>
                                                 <input type="number" class="quantidade" value="${item.quantidade}" required>
                                                 <label>Preço Unitário:</label>
@@ -437,6 +449,10 @@
                                                 <button type="button" class="remove-item">Remover</button>
                                             </div>
                                         `).join('');
+                                        populateItemSelect(editItensList); // Preenche a lista de produtos
+                                        populateClienteSelect();
+                                        populateVendedorSelect();
+
                                         editModal.style.display = 'block';
                                     });
                             }
